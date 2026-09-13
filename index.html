@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0e10">
+<title>REMOTE — Remote TV Digital</title>
+<style>
+/* ==========================================================
+   RESET & THEME
+   ========================================================== */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e0e10;
+  --surface: #161619;
+  --surface-2: #1b1b1f;
+  --btn: #26262b;
+  --btn-hover: #303036;
+  --btn-active: #131316;
+  --border: #2a2a30;
+  --border-strong: #3a3a42;
+  --text: #e8e8ec;
+  --text-dim: #8c8c95;
+  --text-mute: #5a5a63;
+  --power: #d45050;
+  --ok: #4a9d6a;
+  --accent: #5a8fd8;
+  --lcd-bg: #08080a;
+  --lcd-text: #d0d0d8;
+  --lcd-dim: #4a4a54;
+  --shadow-body: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-btn: 0 1px 0 rgba(255,255,255,0.03) inset, 0 1px 2px rgba(0,0,0,0.25);
+}
+
+body[data-theme="light"] {
+  --bg: #e6e6ea;
+  --surface: #f7f7f9;
+  --surface-2: #ffffff;
+  --btn: #ececef;
+  --btn-hover: #e2e2e6;
+  --btn-active: #d2d2d8;
+  --border: #d6d6dc;
+  --border-strong: #b6b6be;
+  --text: #1a1a1f;
+  --text-dim: #5a5a63;
+  --text-mute: #8a8a92;
+  --accent: #3468b0;
+  --shadow-body: 0 1px 0 rgba(255,255,255,0.8) inset, 0 6px 18px rgba(0,0,0,0.12);
+  --shadow-btn: 0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 2px rgba(0,0,0,0.08);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+button { font-family: inherit; }
+
+/* ==========================================================
+   APP / SCREEN LAYOUT
+   ========================================================== */
+#app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.screen.active { display: flex; }
+
+/* ==========================================================
+   HOME SCREEN
+   ========================================================== */
+#screen-home {
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  overflow-y: auto;
+}
+
+.brand {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  margin: 0 0 14px;
+  padding-left: 0.22em;
+  color: var(--text);
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 15px;
+  margin: 0 0 34px;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.primary-btn {
+  background: var(--text);
+  color: var(--bg);
+  border: 0;
+  padding: 14px 30px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 50px;
+  transition: opacity 0.12s ease, transform 0.08s ease;
+}
+.primary-btn:hover { opacity: 0.9; }
+.primary-btn:active { opacity: 0.75; transform: translateY(1px); }
+.primary-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.hint {
+  color: var(--text-mute);
+  font-size: 12.5px;
+  margin: 22px 0 0;
+  max-width: 270px;
+  line-height: 1.55;
+}
+
+/* ==========================================================
+   TOPBAR
+   ========================================================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.topbar h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  border-radius: 9px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s ease;
+}
+.icon-btn:hover { background: var(--btn); }
+.icon-btn:active { background: var(--btn-active); }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.spacer { width: 40px; flex-shrink: 0; }
+
+/* ==========================================================
+   TV SELECT SCREEN
+   ========================================================== */
+.select-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 14px calc(28px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+.search {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  margin-bottom: 14px;
+  outline: none;
+  transition: border-color 0.12s ease;
+  min-height: 46px;
+}
+.search:focus { border-color: var(--border-strong); }
+.search::placeholder { color: var(--text-mute); }
+
+.tv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tv-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 0;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  text-align: left;
+  cursor: pointer;
+  min-height: 58px;
+  transition: background 0.1s ease;
+}
+.tv-item:hover { background: var(--btn); }
+.tv-item:active { background: var(--btn-active); }
+
+.tv-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--btn);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.tv-item.universal .tv-avatar {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tv-name { flex: 1; }
+
+.tv-sub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+
+.tv-arrow {
+  color: var(--text-mute);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.empty-state {
+  padding: 26px 16px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.55;
+  background: var(--surface-2);
+}
+
+/* ==========================================================
+   REMOTE SCREEN
+   ========================================================== */
+#screen-remote { overflow: hidden; }
+
+.remote-top { border-bottom: 1px solid var(--border); }
+
+.remote-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.tv-name-label {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.1;
+}
+
+.conn-badge {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--btn);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  line-height: 1.3;
+}
+.conn-badge.demo { color: var(--ok); border-color: rgba(74,157,106,0.4); }
+.conn-badge.off { color: var(--text-mute); }
+
+.remote-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 12px 12px calc(30px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================
+   REMOTE BODY (PHYSICAL)
+   ========================================================== */
+.remote-body {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 14px;
+  box-shadow: var(--shadow-body);
+  --btn-min: 48px;
+  --btn-fs: 14px;
+  align-self: flex-start;
+}
+
+body[data-bsize="small"] .remote-body { --btn-min: 42px; --btn-fs: 13px; }
+body[data-bsize="large"] .remote-body { --btn-min: 56px; --btn-fs: 16px; }
+
+/* ---------- LCD DISPLAY ---------- */
+.display {
+  background: var(--lcd-bg);
+  border: 1px solid #1c1c22;
+  border-radius: 10px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  transition: opacity 0.2s ease;
+  min-height: 52px;
+  align-items: center;
+}
+
+.disp-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.disp-cell.center { align-items: center; }
+.disp-cell.right { align-items: flex-end; }
+
+.disp-label {
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  color: var(--lcd-dim);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.disp-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lcd-text);
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.disp-val.muted { color: var(--power); font-size: 13px; letter-spacing: 0.08em; }
+.disp-val.off { color: var(--lcd-dim); }
+
+.remote-body.tv-off .display { opacity: 0.4; }
+.remote-body.tv-off .btn:not([data-key="power"]) {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.remote-body.tv-off .col-label { opacity: 0.4; }
+
+/* ---------- BUTTON BASE ---------- */
+.btn {
+  background: var(--btn);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  font-size: var(--btn-fs, 14px);
+  font-weight: 500;
+  min-height: var(--btn-min, 48px);
+  padding: 0 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.08s ease, transform 0.06s ease, box-shadow 0.06s ease;
+  box-shadow: var(--shadow-btn);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.btn:hover { background: var(--btn-hover); }
+.btn:active {
+  background: var(--btn-active);
+  transform: translateY(1.5px);
+  box-shadow: 0 0 0 transparent;
+}
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn svg { display: block; }
+
+/* ---------- ROWS ---------- */
+.row { display: grid; gap: 8px; margin-bottom: 10px; }
+.row-3 { grid-template-columns: repeat(3, 1fr); }
+.row-5 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.row:last-child { margin-bottom: 0; }
+
+.row-3 .btn { font-size: calc(var(--btn-fs, 14px) - 1px); }
+
+.btn-power {
+  color: var(--power);
+  font-weight: 700;
+}
+.btn-power svg { width: 20px; height: 20px; }
+
+.row-5 .btn {
+  font-size: 11px;
+  padding: 0 2px;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- VOLUME / CHANNEL ---------- */
+.volch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.volch-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.col-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--text-mute);
+  text-align: center;
+  margin-bottom: 5px;
+  line-height: 1;
+}
+
+.volch-col .btn {
+  border-radius: 14px;
+  font-size: calc(var(--btn-fs, 14px) + 4px);
+  font-weight: 600;
+  min-height: calc(var(--btn-min, 48px) - 2px);
+}
+
+.volch-col .btn:first-child {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.volch-col .btn:last-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: -1px;
+}
+
+/* ---------- D-PAD ---------- */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  width: 172px;
+  margin: 6px auto 12px;
+  aspect-ratio: 1 / 1;
+}
+
+.dpad .btn {
+  border-radius: 13px;
+  padding: 0;
+  min-height: 0;
+}
+
+.dpad .dpad-up { grid-area: 1 / 2 / 2 / 3; }
+.dpad .dpad-left { grid-area: 2 / 1 / 3 / 2; }
+.dpad .dpad-ok {
+  grid-area: 2 / 2 / 3 / 3;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  border-color: var(--border-strong);
+}
+.dpad .dpad-right { grid-area: 2 / 3 / 3 / 4; }
+.dpad .dpad-down { grid-area: 3 / 2 / 4 / 3; }
+
+/* ---------- NUMBER PAD ---------- */
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.numpad .btn {
+  font-size: calc(var(--btn-fs, 14px) + 3px);
+  font-weight: 600;
+  min-height: calc(var(--btn-min, 48px) + 2px);
+  border-radius: 12px;
+}
+
+.numpad .num-0 { grid-column: 2 / 3; }
+
+/* ==========================================================
+   TOAST
+   ========================================================== */
+#toastContainer {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 58px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  align-items: center;
+  width: max-content;
+  max-width: 90vw;
+}
+
+.toast {
+  background: rgba(18, 18, 22, 0.96);
+  border: 1px solid var(--border-strong);
+  color: #e8e8ec;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+body[data-theme="light"] .toast {
+  background: rgba(28, 28, 34, 0.95);
+  color: #f0f0f4;
+  border-color: #2a2a32;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ==========================================================
+   OVERLAY / MODAL
+   ========================================================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 200;
+}
+.overlay.show { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+/* ---------- INPUT LIST ---------- */
+.input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 13px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  min-height: 46px;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.input-item:hover { background: var(--btn); }
+.input-item:active { background: var(--btn-active); }
+.input-item.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- SETTINGS ---------- */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-of-type { border-bottom: 0; }
+
+.setting-label {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--btn);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.segmented button {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  min-height: 32px;
+  min-width: 40px;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button.active {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.setting-section {
+  margin-top: 18px;
+  padding-top: 4px;
+}
+
+.setting-section h4 {
+  margin: 0 0 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.conn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conn-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.1s ease;
+}
+.conn-btn:hover { background: var(--btn); }
+.conn-btn:active { background: var(--btn-active); }
+
+.conn-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  min-height: 0;
+}
+.conn-note:empty { display: none; }
+.conn-note.warn { color: #d4a04a; }
+.conn-note.ok { color: var(--ok); }
+
+.link-btn {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+.link-btn:active { opacity: 0.7; }
+
+.reset-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(212, 92, 92, 0.35);
+  color: #d45c5c;
+  padding: 12px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background 0.1s ease;
+}
+.reset-btn:hover { background: rgba(212, 92, 92, 0.08); }
+.reset-btn:active { background: rgba(212, 92, 92, 0.15); }
+
+/* ==========================================================
+   FULLSCREEN ADJUSTMENTS
+   ========================================================== */
+body.is-fullscreen .topbar { padding-top: 8px; }
+body.is-fullscreen .remote-scroll { padding-bottom: 20px; }
+
+/* ==========================================================
+   DESKTOP REFINEMENTS
+   ========================================================== */
+@media (min-width: 520px) {
+  .remote-body { max-width: 400px; }
+  .select-body { max-width: 520px; margin: 0 auto; width: 100%; }
+}
+</style>
+</head>
+<body data-theme="dark" data-bsize="medium">
+
+<div id="app">
+
+  <!-- ==================== HOME ==================== -->
+  <section class="screen active" id="screen-home">
+    <h1 class="brand">REMOTE</h1>
+    <p class="tagline">Remote TV kamu hilang? Gunakan HP kamu.</p>
+    <button class="primary-btn" id="btnStart" type="button">Mulai Remote</button>
+    <p class="hint">Pilih TV dan gunakan kontrol digital dari HP.</p>
+  </section>
+
+  <!-- ==================== TV SELECT ==================== -->
+  <section class="screen" id="screen-select">
+    <header class="topbar">
+      <button class="icon-btn" id="btnBackHome" type="button" aria-label="Kembali">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <h2>Pilih TV</h2>
+      <span class="spacer"></span>
+    </header>
+    <div class="select-body">
+      <input type="search" class="search" id="tvSearch" placeholder="Cari merek TV..." autocomplete="off" spellcheck="false">
+      <div class="tv-list" id="tvList"></div>
+    </div>
+  </section>
+
+  <!-- ==================== REMOTE ==================== -->
+  <section class="screen" id="screen-remote">
+    <header class="topbar remote-top">
+      <button class="icon-btn" id="btnBackSelect" type="button" aria-label="Kembali">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="remote-title">
+        <span class="tv-name-label" id="tvNameLabel">Universal Remote</span>
+        <span class="conn-badge demo" id="connBadge">DEMO</span>
+      </div>
+      <div style="display:flex; gap:2px; flex-shrink:0;">
+        <button class="icon-btn" id="btnFullscreen" type="button" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" type="button" aria-label="Pengaturan">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
+            <circle cx="9" cy="7" r="2.2"/>
+            <circle cx="15" cy="12" r="2.2"/>
+            <circle cx="9" cy="17" r="2.2"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="remote-scroll">
+      <div class="remote-body" id="remoteBody">
+
+        <!-- LCD DISPLAY -->
+        <div class="display" id="display">
+          <div class="disp-cell">
+            <span class="disp-label">TV</span>
+            <span class="disp-val" id="dispPower">ON</span>
+          </div>
+          <div class="disp-cell center">
+            <span class="disp-label">VOL</span>
+            <span class="disp-val" id="dispVol">24</span>
+          </div>
+          <div class="disp-cell right">
+            <span class="disp-label">CH</span>
+            <span class="disp-val" id="dispCh">08</span>
+          </div>
+        </div>
+
+        <!-- TOP ROW: POWER / INPUT / MUTE -->
+        <div class="row row-3">
+          <button class="btn btn-power" data-key="power" type="button" aria-label="Power">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M12 3.5v8"/>
+              <path d="M6.8 6.6a7.5 7.5 0 1 0 10.4 0"/>
+            </svg>
+          </button>
+          <button class="btn" data-key="input" type="button">Input</button>
+          <button class="btn" data-key="mute" type="button">Mute</button>
+        </div>
+
+        <!-- VOLUME / CHANNEL -->
+        <div class="volch">
+          <div class="volch-col">
+            <span class="col-label">VOL</span>
+            <button class="btn" data-key="volup" type="button" aria-label="Volume naik">+</button>
+            <button class="btn" data-key="voldown" type="button" aria-label="Volume turun">−</button>
+          </div>
+          <div class="volch-col">
+            <span class="col-label">CH</span>
+            <button class="btn" data-key="chup" type="button" aria-label="Channel naik">+</button>
+            <button class="btn" data-key="chdown" type="button" aria-label="Channel turun">−</button>
+          </div>
+        </div>
+
+        <!-- D-PAD -->
+        <div class="dpad">
+          <button class="btn dpad-up" data-key="up" type="button" aria-label="Atas">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+          </button>
+          <button class="btn dpad-left" data-key="left" type="button" aria-label="Kiri">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="btn dpad-ok" data-key="ok" type="button" aria-label="OK">OK</button>
+          <button class="btn dpad-right" data-key="right" type="button" aria-label="Kanan">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="btn dpad-down" data-key="down" type="button" aria-label="Bawah">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- MENU ROW -->
+        <div class="row row-5">
+          <button class="btn" data-key="home" type="button">Home</button>
+          <button class="btn" data-key="back" type="button">Back</button>
+          <button class="btn" data-key="menu" type="button">Menu</button>
+          <button class="btn" data-key="exit" type="button">Exit</button>
+          <button class="btn" data-key="guide" type="button">Guide</button>
+        </div>
+
+        <!-- MEDIA ROW -->
+        <div class="row row-5">
+          <button class="btn" data-key="rew" type="button" aria-label="Rewind">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11 6v12L2 12z"/><path d="M22 6v12l-9-6z"/></svg>
+          </button>
+          <button class="btn" data-key="play" type="button" aria-label="Play">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>
+          </button>
+          <button class="btn" data-key="pause" type="button" aria-label="Pause">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="4" width="4.5" height="16" rx="1"/><rect x="13.5" y="4" width="4.5" height="16" rx="1"/></svg>
+          </button>
+          <button class="btn" data-key="stop" type="button" aria-label="Stop">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+          </button>
+          <button class="btn" data-key="ff" type="button" aria-label="Fast Forward">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 6v12l9-6z"/><path d="M13 6v12l9-6z"/></svg>
+          </button>
+        </div>
+
+        <!-- NUMBER PAD -->
+        <div class="numpad">
+          <button class="btn" data-key="1" type="button">1</button>
+          <button class="btn" data-key="2" type="button">2</button>
+          <button class="btn" data-key="3" type="button">3</button>
+          <button class="btn" data-key="4" type="button">4</button>
+          <button class="btn" data-key="5" type="button">5</button>
+          <button class="btn" data-key="6" type="button">6</button>
+          <button class="btn" data-key="7" type="button">7</button>
+          <button class="btn" data-key="8" type="button">8</button>
+          <button class="btn" data-key="9" type="button">9</button>
+          <button class="btn num-0" data-key="0" type="button">0</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== TOAST ==================== -->
+<div id="toastContainer" aria-live="polite"></div>
+
+<!-- ==================== INPUT OVERLAY ==================== -->
+<div class="overlay" id="inputOverlay">
+  <div class="modal" role="dialog" aria-label="Pilih Input">
+    <div class="modal-head">
+      <h3>Input</h3>
+      <button class="icon-btn" data-close="inputOverlay" type="button" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="input-list" id="inputList"></div>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS OVERLAY ==================== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" id="settingsModal" role="dialog" aria-label="Pengaturan">
+    <div class="modal-head">
+      <h3>Pengaturan</h3>
+      <button class="icon-btn" data-close="settingsOverlay" type="button" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Suara</span>
+      <div class="segmented" data-setting="sound">
+        <button type="button" data-value="on">ON</button>
+        <button type="button" data-value="off">OFF</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Getaran</span>
+      <div class="segmented" data-setting="vibration">
+        <button type="button" data-value="on">ON</button>
+        <button type="button" data-value="off">OFF</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Ukuran Tombol</span>
+      <div class="segmented" data-setting="buttonSize">
+        <button type="button" data-value="small">S</button>
+        <button type="button" data-value="medium">M</button>
+        <button type="button" data-value="large">L</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-label">Tema</span>
+      <div class="segmented" data-setting="theme">
+        <button type="button" data-value="dark">Dark</button>
+        <button type="button" data-value="light">Light</button>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <h4>Connect TV</h4>
+      <div class="conn-list">
+        <button class="conn-btn" type="button" data-conn="wifi">Wi-Fi / Local Network</button>
+        <button class="conn-btn" type="button" data-conn="ir">Infrared</button>
+        <button class="conn-btn" type="button" data-conn="demo">Demo Mode</button>
+      </div>
+      <div class="conn-note" id="connNote"></div>
+    </div>
+
+    <div class="setting-section">
+      <button class="reset-btn" type="button" id="btnReset">Reset Pengaturan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ========================
+// TV DATA
+// ========================
+const TV_BRANDS = [
+  'Samsung', 'LG', 'Sony', 'TCL', 'Sharp', 'Panasonic',
+  'Philips', 'Hisense', 'Xiaomi', 'Polytron', 'Coocaa', 'Changhong'
+];
+const UNIVERSAL_NAME = 'Universal Remote';
+const INPUT_SOURCES = ['TV', 'HDMI 1', 'HDMI 2', 'HDMI 3', 'AV', 'USB'];
+const STORAGE_KEY = 'remote.tv.v1';
+
+// ========================
+// REMOTE STATE
+// ========================
+const DEFAULT_STATE = {
+  tv: null,
+  power: true,
+  volume: 24,
+  channel: 8,
+  muted: false,
+  input: 'TV',
+  sound: true,
+  vibration: true,
+  buttonSize: 'medium',
+  theme: 'dark',
+  mode: 'demo',        // 'demo' | 'connected'
+  connection: 'demo'   // 'demo' | 'none'
+};
+
+let state = Object.assign({}, DEFAULT_STATE);
+
+// Digit buffer for channel entry
+let digitBuffer = '';
+let digitTimer = null;
+
+// ========================
+// LOCAL STORAGE
+// ========================
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved && typeof saved === 'object') {
+      state = Object.assign({}, DEFAULT_STATE, saved);
+    }
+  } catch (err) {
+    // localStorage tidak tersedia / data rusak → gunakan default
+    state = Object.assign({}, DEFAULT_STATE);
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (err) {
+    // storage penuh atau diblokir → abaikan
+  }
+}
+
+// ========================
+// AUDIO / HAPTIC
+// ========================
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try {
+    audioCtx = new AC();
+  } catch (err) {
+    audioCtx = null;
+  }
+  return audioCtx;
+}
+
+function playClick(type) {
+  if (!state.sound) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    let freq = 920;
+    let dur = 0.018;
+    let vol = 0.05;
+
+    if (type === 'nav') { freq = 680; dur = 0.022; vol = 0.045; }
+    else if (type === 'power') { freq = 420; dur = 0.05; vol = 0.06; }
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, t);
+
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.015);
+  } catch (err) {
+    // audio gagal → abaikan
+  }
+}
+
+function haptic(ms) {
+  if (!state.vibration) return;
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch (err) {
+    // vibration tidak didukung → abaikan
+  }
+}
+
+// ========================
+// TOAST
+// ========================
+const toastContainer = document.getElementById('toastContainer');
+
+function toast(message) {
+  if (!toastContainer) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  toastContainer.appendChild(el);
+
+  requestAnimationFrame(function () {
+    el.classList.add('show');
+  });
+
+  setTimeout(function () {
+    el.classList.remove('show');
+    setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 250);
+  }, 1250);
+
+  while (toastContainer.children.length > 3) {
+    toastContainer.removeChild(toastContainer.firstChild);
+  }
+}
+
+// ========================
+// UI — SCREEN NAVIGATION
+// ========================
+function showScreen(id) {
+  const screens = document.querySelectorAll('.screen');
+  for (let i = 0; i < screens.length; i++) {
+    screens[i].classList.toggle('active', screens[i].id === id);
+  }
+}
+
+// ========================
+// UI — DISPLAY & BADGE
+// ========================
+const remoteBody = document.getElementById('remoteBody');
+const dispPower = document.getElementById('dispPower');
+const dispVol = document.getElementById('dispVol');
+const dispCh = document.getElementById('dispCh');
+const connBadge = document.getElementById('connBadge');
+const tvNameLabel = document.getElementById('tvNameLabel');
+
+function updateDisplay() {
+  if (!remoteBody) return;
+
+  remoteBody.classList.toggle('tv-off', !state.power);
+
+  dispPower.textContent = state.power ? 'ON' : 'OFF';
+  dispPower.classList.toggle('off', !state.power);
+
+  if (state.muted && state.power) {
+    dispVol.textContent = 'MUTE';
+    dispVol.classList.add('muted');
+  } else {
+    dispVol.textContent = String(state.volume);
+    dispVol.classList.remove('muted');
+  }
+
+  dispCh.textContent = String(state.channel).padStart(2, '0');
+}
+
+function updateConnBadge() {
+  if (!connBadge) return;
+  if (state.connection === 'demo') {
+    connBadge.textContent = 'DEMO';
+    connBadge.className = 'conn-badge demo';
+  } else {
+    connBadge.textContent = 'NO TV';
+    connBadge.className = 'conn-badge off';
+  }
+}
+
+function updateTVLabel() {
+  if (!tvNameLabel) return;
+  tvNameLabel.textContent = state.tv || UNIVERSAL_NAME;
+}
+
+// ========================
+// UI — APPLY SETTINGS TO DOM
+// ========================
+function applyToDOM() {
+  document.body.dataset.theme = state.theme;
+  document.body.dataset.bsize = state.buttonSize;
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute('content', state.theme === 'dark' ? '#0e0e10' : '#e6e6ea');
+  }
+
+  updateConnBadge();
+  updateDisplay();
+  updateTVLabel();
+}
+
+// ========================
+// REMOTE CONTROLLER
+// ========================
+const NAV_KEYS = ['up', 'down', 'left', 'right', 'ok'];
+
+function handleKey(key) {
+  const soundType = NAV_KEYS.indexOf(key) !== -1 ? 'nav' : (key === 'power' ? 'power' : 'btn');
+  playClick(soundType);
+  haptic(10);
+
+  // Power selalu bisa ditekan
+  if (key === 'power') {
+    state.power = !state.power;
+    toast(state.power ? 'TV ON' : 'TV OFF');
+    updateDisplay();
+    saveState();
+    return;
+  }
+
+  // Selain power, butuh TV dalam keadaan ON
+  if (!state.power) return;
+
+  switch (key) {
+    case 'volup':
+      state.volume = Math.min(100, state.volume + 1);
+      state.muted = false;
+      toast('Volume ' + state.volume);
+      break;
+
+    case 'voldown':
+      state.volume = Math.max(0, state.volume - 1);
+      state.muted = false;
+      toast('Volume ' + state.volume);
+      break;
+
+    case 'chup':
+      state.channel = state.channel >= 99 ? 1 : state.channel + 1;
+      toast('Channel ' + String(state.channel).padStart(2, '0'));
+      break;
+
+    case 'chdown':
+      state.channel = state.channel <= 1 ? 99 : state.channel - 1;
+      toast('Channel ' + String(state.channel).padStart(2, '0'));
+      break;
+
+    case 'mute':
+      state.muted = !state.muted;
+      toast(state.muted ? 'Muted' : 'Suara aktif');
+      break;
+
+    case 'input':
+      openInputMenu();
+      return;
+
+    case 'up':    toast('Atas');  break;
+    case 'down':  toast('Bawah'); break;
+    case 'left':  toast('Kiri');  break;
+    case 'right': toast('Kanan'); break;
+    case 'ok':    toast('OK');    break;
+
+    case 'home':  toast('Home');  break;
+    case 'back':  toast('Back');  break;
+    case 'menu':  toast('Menu');  break;
+    case 'exit':  toast('Exit');  break;
+    case 'guide': toast('Guide'); break;
+
+    case 'rew':   toast('Rewind');        break;
+    case 'play':  toast('Play');          break;
+    case 'pause': toast('Pause');         break;
+    case 'stop':  toast('Stop');          break;
+    case 'ff':    toast('Fast Forward');  break;
+
+    default:
+      if (/^[0-9]$/.test(key)) {
+        handleDigit(key);
+        return;
+      }
+  }
+
+  updateDisplay();
+  saveState();
+}
+
+// -------- Number pad channel entry --------
+function handleDigit(digit) {
+  digitBuffer += digit;
+  clearTimeout(digitTimer);
+
+  if (digitBuffer.length >= 2) {
+    commitDigits();
+    return;
+  }
+
+  dispCh.textContent = digitBuffer.padStart(2, '0');
+  digitTimer = setTimeout(commitDigits, 1100);
+}
+
+function commitDigits() {
+  clearTimeout(digitTimer);
+  const n = parseInt(digitBuffer, 10);
+  digitBuffer = '';
+
+  if (!isNaN(n)) {
+    if (n >= 1 && n <= 99) {
+      state.channel = n;
+      toast('Channel ' + String(n).padStart(2, '0'));
+    } else if (n === 0) {
+      state.channel = 1;
+      toast('Channel 01');
+    }
+  }
+
+  updateDisplay();
+  saveState();
+}
+
+// ========================
+// INPUT MENU
+// ========================
+const inputOverlay = document.getElementById('inputOverlay');
+const inputList = document.getElementById('inputList');
+
+function openInputMenu() {
+  if (!inputList || !inputOverlay) return;
+  inputList.innerHTML = '';
+
+  INPUT_SOURCES.forEach(function (name) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'input-item' + (state.input === name ? ' active' : '');
+    btn.textContent = name;
+    btn.addEventListener('click', function () {
+      state.input = name;
+      toast('Input ' + name);
+      closeOverlay('inputOverlay');
+      saveState();
+    });
+    inputList.appendChild(btn);
+  });
+
+  openOverlay('inputOverlay');
+}
+
+// ========================
+// OVERLAY HELPERS
+// ========================
+function openOverlay(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('show');
+}
+
+function closeOverlay(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+
+// ========================
+// TV SELECT
+// ========================
+const tvListEl = document.getElementById('tvList');
+const tvSearchEl = document.getElementById('tvSearch');
+
+function renderTVList(filter) {
+  if (!tvListEl) return;
+  const q = (filter || '').trim().toLowerCase();
+  tvListEl.innerHTML = '';
+
+  const items = TV_BRANDS.map(function (b) { return { name: b, universal: false }; });
+  items.push({ name: UNIVERSAL_NAME, universal: true });
+
+  const filtered = items.filter(function (it) {
+    return !q || it.name.toLowerCase().indexOf(q) !== -1;
+  });
+
+  if (filtered.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'Merek tidak ditemukan. Coba "Universal Remote".';
+    tvListEl.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(function (it) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tv-item' + (it.universal ? ' universal' : '');
+
+    const initial = it.universal ? '\u2605' : it.name.charAt(0).toUpperCase();
+
+    const avatar = document.createElement('span');
+    avatar.className = 'tv-avatar';
+    avatar.textContent = initial;
+
+    const info = document.createElement('span');
+    info.className = 'tv-name';
+    info.textContent = it.name;
+
+    if (it.universal) {
+      const sub = document.createElement('span');
+      sub.className = 'tv-sub';
+      sub.textContent = 'Untuk merek yang tidak terdaftar';
+      info.appendChild(sub);
+    }
+
+    const arrow = document.createElement('span');
+    arrow.className = 'tv-arrow';
+    arrow.textContent = '\u203A';
+
+    btn.appendChild(avatar);
+    btn.appendChild(info);
+    btn.appendChild(arrow);
+
+    btn.addEventListener('click', function () {
+      selectTV(it.name);
+    });
+
+    tvListEl.appendChild(btn);
+  });
+}
+
+function selectTV(name) {
+  state.tv = name;
+  saveState();
+  updateTVLabel();
+  updateDisplay();
+  updateConnBadge();
+  showScreen('screen-remote');
+  haptic(12);
+  playClick('btn');
+  toast(name + ' \u2022 Demo Mode');
+}
+
+// ========================
+// SETTINGS
+// ========================
+const settingsModal = document.getElementById('settingsModal');
+const connNoteEl = document.getElementById('connNote');
+
+function syncSettingsUI() {
+  if (!settingsModal) return;
+  const segs = settingsModal.querySelectorAll('.segmented');
+  for (let i = 0; i < segs.length; i++) {
+    const seg = segs[i];
+    const key = seg.dataset.setting;
+    let val = null;
+    if (key === 'sound') val = state.sound ? 'on' : 'off';
+    else if (key === 'vibration') val = state.vibration ? 'on' : 'off';
+    else if (key === 'buttonSize') val = state.buttonSize;
+    else if (key === 'theme') val = state.theme;
+
+    const btns = seg.querySelectorAll('button[data-value]');
+    for (let j = 0; j < btns.length; j++) {
+      btns[j].classList.toggle('active', btns[j].dataset.value === val);
+    }
+  }
+}
+
+function applySetting(key, value) {
+  if (key === 'sound') {
+    state.sound = value === 'on';
+    if (state.sound) playClick('btn');
+  } else if (key === 'vibration') {
+    state.vibration = value === 'on';
+    if (state.vibration) haptic(15);
+  } else if (key === 'buttonSize') {
+    state.buttonSize = value;
+  } else if (key === 'theme') {
+    state.theme = value;
+  }
+
+  applyToDOM();
+  saveState();
+}
+
+function handleConn(type) {
+  if (!connNoteEl) return;
+
+  if (type === 'demo') {
+    state.mode = 'demo';
+    state.connection = 'demo';
+    connNoteEl.className = 'conn-note ok';
+    connNoteEl.textContent = 'Mode demo aktif. Perubahan hanya simulasi.';
+    updateConnBadge();
+    saveState();
+    toast('Demo Mode aktif');
+    return;
+  }
+
+  // Wi-Fi / Infrared → cari TV
+  state.mode = 'connected';
+  connNoteEl.className = 'conn-note';
+  connNoteEl.textContent = 'Mencari TV...';
+  updateConnBadge();
+
+  setTimeout(function () {
+    state.connection = 'none';
+    updateConnBadge();
+    saveState();
+    connNoteEl.className = 'conn-note warn';
+    connNoteEl.innerHTML = '';
+
+    const line1 = document.createElement('div');
+    line1.textContent = 'TV tidak dapat dikontrol secara langsung dari browser ini.';
+    connNoteEl.appendChild(line1);
+
+    const line2 = document.createElement('div');
+    line2.style.marginTop = '8px';
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.className = 'link-btn';
+    link.dataset.conn = 'demo';
+    link.textContent = 'Gunakan Demo Mode';
+    line2.appendChild(link);
+    connNoteEl.appendChild(line2);
+  }, 950);
+}
+
+function resetSettings() {
+  state = Object.assign({}, DEFAULT_STATE, { tv: state.tv });
+  digitBuffer = '';
+  clearTimeout(digitTimer);
+  if (connNoteEl) {
+    connNoteEl.textContent = '';
+    connNoteEl.className = 'conn-note';
+  }
+  applyToDOM();
+  syncSettingsUI();
+  saveState();
+  toast('Pengaturan direset');
+  playClick('power');
+}
+
+// ========================
+// FULLSCREEN
+// ========================
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function toggleFullscreen() {
+  try {
+    if (isFullscreen()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) {
+        const p = exit.call(document);
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      }
+      return;
+    }
+
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+
+    if (!req) {
+      toast('Fullscreen tidak didukung browser ini');
+      return;
+    }
+
+    const result = req.call(el);
+    if (result && typeof result.catch === 'function') {
+      result.catch(function () {
+        toast('Fullscreen tidak didukung browser ini');
+      });
+    }
+  } catch (err) {
+    toast('Fullscreen tidak didukung browser ini');
+  }
+}
+
+function onFullscreenChange() {
+  const active = isFullscreen();
+  document.body.classList.toggle('is-fullscreen', active);
+}
+
+// ========================
+// EVENT BINDING
+// ========================
+function bindEvents() {
+
+  // -------- Home --------
+  const btnStart = document.getElementById('btnStart');
+  if (btnStart) {
+    btnStart.addEventListener('click', function () {
+      playClick('btn');
+      haptic(12);
+      showScreen('screen-select');
+      renderTVList('');
+      if (tvSearchEl) tvSearchEl.value = '';
+    });
+  }
+
+  // -------- TV Select --------
+  const btnBackHome = document.getElementById('btnBackHome');
+  if (btnBackHome) {
+    btnBackHome.addEventListener('click', function () {
+      playClick('btn');
+      showScreen('screen-home');
+    });
+  }
+
+  if (tvSearchEl) {
+    tvSearchEl.addEventListener('input', function () {
+      renderTVList(tvSearchEl.value);
+    });
+  }
+
+  // -------- Remote --------
+  const btnBackSelect = document.getElementById('btnBackSelect');
+  if (btnBackSelect) {
+    btnBackSelect.addEventListener('click', function () {
+      playClick('btn');
+      showScreen('screen-select');
+      renderTVList(tvSearchEl ? tvSearchEl.value : '');
+    });
+  }
+
+  const btnFullscreen = document.getElementById('btnFullscreen');
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', function () {
+      playClick('btn');
+      haptic(10);
+      toggleFullscreen();
+    });
+  }
+
+  const btnSettings = document.getElementById('btnSettings');
+  if (btnSettings) {
+    btnSettings.addEventListener('click', function () {
+      playClick('btn');
+      haptic(10);
+      syncSettingsUI();
+      openOverlay('settingsOverlay');
+    });
+  }
+
+  // -------- Remote buttons (delegation) --------
+  if (remoteBody) {
+    remoteBody.addEventListener('click', function (e) {
+      const btn = e.target.closest('.btn[data-key]');
+      if (!btn) return;
+      handleKey(btn.dataset.key);
+    });
+  }
+
+  // -------- Overlay close buttons --------
+  document.addEventListener('click', function (e) {
+    const closeBtn = e.target.closest('[data-close]');
+    if (closeBtn) {
+      closeOverlay(closeBtn.dataset.close);
+      playClick('btn');
+    }
+  });
+
+  // -------- Overlay backdrop click --------
+  const overlays = document.querySelectorAll('.overlay');
+  for (let i = 0; i < overlays.length; i++) {
+    (function (ov) {
+      ov.addEventListener('click', function (e) {
+        if (e.target === ov) ov.classList.remove('show');
+      });
+    })(overlays[i]);
+  }
+
+  // -------- Settings: segmented controls --------
+  if (settingsModal) {
+    settingsModal.addEventListener('click', function (e) {
+      const seg = e.target.closest('.segmented');
+      if (seg) {
+        const btn = e.target.closest('button[data-value]');
+        if (!btn) return;
+        applySetting(seg.dataset.setting, btn.dataset.value);
+        syncSettingsUI();
+        playClick('btn');
+        haptic(8);
+        return;
+      }
+
+      const connBtn = e.target.closest('[data-conn]');
+      if (connBtn) {
+        playClick('btn');
+        haptic(10);
+        handleConn(connBtn.dataset.conn);
+      }
+    });
+  }
+
+  // -------- Reset --------
+  const btnReset = document.getElementById('btnReset');
+  if (btnReset) {
+    btnReset.addEventListener('click', function () {
+      resetSettings();
+    });
+  }
+
+  // -------- Fullscreen change --------
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  // -------- Keyboard support (desktop) --------
+  document.addEventListener('keydown', function (e) {
+    // Jangan tangkap saat mengetik di input
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    // Tutup overlay dengan Escape
+    if (e.key === 'Escape') {
+      const open = document.querySelector('.overlay.show');
+      if (open) open.classList.remove('show');
+      return;
+    }
+
+    // Hanya saat screen remote aktif
+    const remoteScreen = document.getElementById('screen-remote');
+    if (!remoteScreen || !remoteScreen.classList.contains('active')) return;
+    if (document.querySelector('.overlay.show')) return;
+
+    let key = null;
+    switch (e.key) {
+      case 'ArrowUp':    key = 'up'; break;
+      case 'ArrowDown':  key = 'down'; break;
+      case 'ArrowLeft':  key = 'left'; break;
+      case 'ArrowRight': key = 'right'; break;
+      case 'Enter':      key = 'ok'; break;
+      case 'Backspace':  key = 'back'; break;
+      case 'm': case 'M': key = 'mute'; break;
+      default:
+        if (/^[0-9]$/.test(e.key)) key = e.key;
+    }
+
+    if (key) {
+      e.preventDefault();
+      handleKey(key);
+    }
+  });
+
+  // iOS: aktifkan :active pada touch
+  document.addEventListener('touchstart', function () {}, { passive: true });
+}
+
+// ========================
+// INIT
+// ========================
+function init() {
+  loadState();
+  applyToDOM();
+  bindEvents();
+  renderTVList('');
+  syncSettingsUI();
+  updateConnBadge();
+  updateDisplay();
+  updateTVLabel();
+
+  // Selalu mulai dari Home
+  showScreen('screen-home');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
